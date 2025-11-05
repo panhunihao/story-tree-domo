@@ -1,1 +1,154 @@
 
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>故事树交互展示原型（修正版）</title>
+<style>
+body {
+  font-family: "Microsoft YaHei", sans-serif;
+  background: #f8f9fa;
+  padding: 24px;
+}
+.tree-node {
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin: 6px 6px 6px 0;
+  display: inline-block;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+.tree-node:hover { opacity: 0.9; transform: scale(1.02); }
+.theme { background: #ffb347; }
+.round1 { background: #ffd86b; }
+.round2 { background: #a0e89d; }
+.round3 { background: #c3a6ff; }
+.round4 { background: #ffb6b9; }
+.more-btn {
+  background: #ddd;
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  display: inline-block;
+  margin: 4px 0 0 8px;
+}
+.more-btn:hover { background: #ccc; }
+.branch {
+  margin-left: 30px;
+  border-left: 2px solid #ccc;
+  padding-left: 10px;
+  margin-top: 4px;
+}
+.fade-in { animation: fadeIn 0.3s ease forwards; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.notice {
+  background: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-radius: 10px;
+  padding: 12px;
+  color: #856404;
+  width: fit-content;
+  margin-top: 8px;
+}
+</style>
+</head>
+<body>
+<h2>🐾 故事树交互展示原型</h2>
+<div id="tree"></div>
+<script>
+const data = {
+  id: "theme1",
+  title: "主题（小狗）",
+  level: 0,
+  children: [
+    {
+      id: "r1-1",
+      title: "首轮1《小胖》",
+      level: 1,
+      children: [
+        { id: "r2-1", title: "第2轮1", level: 2, children: [
+          { id: "r3-1", title: "第3轮1", level: 3 },
+          { id: "r3-2", title: "第3轮2", level: 3 },
+          { id: "r3-3", title: "第3轮3", level: 3 },
+          { id: "r3-4", title: "第3轮4", level: 3 }
+        ]},
+        { id: "r2-2", title: "第2轮2", level: 2, children: [] },
+        { id: "r2-3", title: "第2轮3", level: 2, children: [] },
+        { id: "r2-4", title: "第2轮4", level: 2, children: [] }
+      ]
+    },
+    {
+      id: "r1-2",
+      title: "首轮2《胖虎》",
+      level: 1,
+      children: [
+        { id: "r2-5", title: "第2轮A", level: 2, children: [
+          { id: "r3-5", title: "第3轮A1", level: 3 },
+          { id: "r3-6", title: "第3轮A2", level: 3 }
+        ]},
+        { id: "r2-6", title: "第2轮B", level: 2, children: [] }
+      ]
+    }
+  ]
+};
+// 测试无首轮
+// data.children = [];
+
+function levelClass(l){return ["theme","round1","round2","round3","round4"][l]||"round4";}
+function renderTree(root){
+  const tree=document.getElementById("tree");
+  tree.innerHTML="";
+  const rootEl=nodeEl(root);
+  tree.appendChild(rootEl);
+  if(!root.children?.length){
+    const tip=document.createElement("div");
+    tip.className="notice fade-in";
+    tip.innerHTML="暂无首轮作品，<a href='#'>成为首位创作者</a>";
+    tree.appendChild(tip);
+    return;
+  }
+  const branch=document.createElement("div");
+  branch.className="branch fade-in";
+  tree.appendChild(branch);
+  renderChildren(root,branch,2);
+}
+function nodeEl(n){
+  const el=document.createElement("div");
+  el.className="tree-node fade-in "+levelClass(n.level);
+  el.textContent=n.title;
+  el.onclick=e=>{e.stopPropagation();openNode(n,el)};
+  return el;
+}
+function openNode(n,el){
+  document.querySelectorAll(".branch").forEach(b=>b.remove());
+  if(!n.children?.length)return;
+  const br=document.createElement("div");
+  br.className="branch fade-in";
+  el.after(br);
+  renderChildren(n,br,2);
+}
+function renderChildren(n,container,limit){
+  n.children.slice(0,limit).forEach(ch=>container.appendChild(nodeEl(ch)));
+  if(n.children.length>limit){
+    const more=document.createElement("span");
+    more.className="more-btn";
+    more.textContent="更多";
+    let off=limit;
+    more.onclick=e=>{
+      e.stopPropagation();
+      n.children.slice(off,off+2).forEach(ch=>container.appendChild(nodeEl(ch)));
+      off+=2;
+      if(off>=n.children.length)more.remove();
+    };
+    container.appendChild(more);
+  }
+}
+renderTree(data);
+</script>
+</body>
+</html>

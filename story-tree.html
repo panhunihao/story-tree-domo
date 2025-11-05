@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>故事树交互展示原型</title>
+<style>
+body {
+  font-family: "Microsoft YaHei", sans-serif;
+  background: #f8f9fa;
+  padding: 24px;
+}
+.tree-node {
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin: 6px 6px 6px 0;
+  display: inline-block;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+.tree-node:hover { opacity: 0.9; transform: scale(1.02); }
+.theme { background: #ffb347; }
+.round1 { background: #ffd86b; }
+.round2 { background: #a0e89d; }
+.round3 { background: #c3a6ff; }
+.round4 { background: #ffb6b9; }
+.more-btn {
+  background: #ddd;
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  display: inline-block;
+  margin: 4px 0 0 8px;
+}
+.more-btn:hover { background: #ccc; }
+.branch {
+  margin-left: 30px;
+  border-left: 2px solid #ccc;
+  padding-left: 10px;
+  margin-top: 4px;
+}
+.fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.notice {
+  background: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-radius: 10px;
+  padding: 12px;
+  color: #856404;
+  width: fit-content;
+  margin-top: 8px;
+}
+</style>
+</head>
+<body>
+
+<h2>🐾 故事树交互展示原型</h2>
+<div id="tree"></div>
+
+<script>
+// 故事数据
+const data = {
+  id: "theme1",
+  title: "主题（小狗）",
+  level: 0,
+  children: [
+    {
+      id: "r1-1",
+      title: "首轮1《小胖》",
+      level: 1,
+      children: [
+        { id: "r2-1", title: "第2轮1", level: 2, children: [
+          { id: "r3-1", title: "第3轮1", level: 3 },
+          { id: "r3-2", title: "第3轮2", level: 3 },
+          { id: "r3-3", title: "第3轮3", level: 3 },
+          { id: "r3-4", title: "第3轮4", level: 3 }
+        ] },
+        { id: "r2-2", title: "第2轮2", level: 2, children: [] },
+        { id: "r2-3", title: "第2轮3", level: 2, children: [] },
+        { id: "r2-4", title: "第2轮4", level: 2, children: [] }
+      ]
+    },
+    {
+      id: "r1-2",
+      title: "首轮2《胖虎》",
+      level: 1,
+      children: [
+        { id: "r2-5", title: "第2轮A", level: 2, children: [
+          { id: "r3-5", title: "第3轮A1", level: 3 },
+          { id: "r3-6", title: "第3轮A2", level: 3 }
+        ] },
+        { id: "r2-6", title: "第2轮B", level: 2, children: [] }
+      ]
+    }
+  ]
+};
+
+// 模拟“无首轮”可测试
+// data.children = [];
+
+function getLevelClass(level) {
+  switch (level) {
+    case 0: return "theme";
+    case 1: return "round1";
+    case 2: return "round2";
+    case 3: return "round3";
+    default: return "round4";
+  }
+}
+
+// 渲染树根
+function renderTree(root) {
+  const treeEl = document.getElementById("tree");
+  treeEl.innerHTML = "";
+
+  const rootEl = createNode(root);
+  treeEl.appendChild(rootEl);
+
+  if (!root.children || root.children.length === 0) {
+    const notice = document.createElement("div");
+    notice.className = "notice fade-in";
+    notice.innerHTML = "暂无首轮作品，<a href='#'>成为首位创作者</a>";
+    treeEl.appendChild(notice);
+    return;
+  }
+
+  const branch = document.createElement("div");
+  branch.className = "branch fade-in";
+  treeEl.appendChild(branch);
+  renderChildren(root, branch, 2);
+}
+
+// 创建节点
+function createNode(node) {
+  const el = document.createElement("div");
+  el.className = "tree-node fade-in " + getLevelClass(node.level);
+  el.textContent = node.title;
+  el.onclick = (e) => {
+    e.stopPropagation();
+    handleClickNode(node, el);
+  };
+  return el;
+}
+
+// 点击节点展开逻辑
+function handleClickNode(node, el) {
+  // 移除所有 branch（折叠其它分支）
+  const siblings = document.querySelectorAll(".branch");
+  siblings.forEach(b => b.remove());
+
+  if (!node.children || node.children.length === 0) return;
+
+  const branch = document.createElement("div");
+  branch.className = "branch fade-in";
+  el.after(branch);
+  renderChildren(node, branch, 2);
+}
+
+// 渲染子节点，包含“更多”逻辑
+function renderChildren(node, container, limit) {
+  const children = node.children.slice(0, limit);
+  children.forEach(ch => {
+    const chEl = createNode(ch);
+    container.appendChild(chEl);
+  });
+
+  if (node.children.length > limit) {
+    const more = document.createElement("span");
+    more.className = "more-btn";
+    more.textContent = "更多";
+    let offset = limit;
+    more.onclick = (e) => {
+      e.stopPropagation();
+      const next = node.children.slice(offset, offset + 2);
+      next.forEach(ch => {
+        const chEl = createNode(ch);
+        container.appendChild(chEl);
+      });
+      offset += 2;
+      if (offset >= node.children.length) more.remove();
+    };
+    container.appendChild(more);
+  }
+}
+
+renderTree(data);
+</script>
+</body>
+</html>
